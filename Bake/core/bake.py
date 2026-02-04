@@ -179,7 +179,7 @@ class Bake:
             color_embedding = self.color_embedding_encoder(baked_x_lr)
             residual = x
 
-            h = self.nemo1(h)
+            h = self.nemo1(x)
             h = self.color_embedding_gate(h, color_embedding)
             h = self.nemo2(h)
             h = self.residual_gate(h, residual)
