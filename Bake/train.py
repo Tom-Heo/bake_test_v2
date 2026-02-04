@@ -1,4 +1,5 @@
 import os
+import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -30,7 +31,7 @@ def compute_psnr(img1, img2):
     return 10 * torch.log10(1.0 / mse)
 
 
-def train(config):
+def train(config, args):
     # 1. Setup
     Config.create_directories()
     logger = get_logger(config.LOG_DIR)
@@ -48,7 +49,7 @@ def train(config):
 
     train_loader = DataLoader(
         train_dataset,
-        batch_size=config.BATCH_SIZE,  # 1
+        batch_size=config.BATCH_SIZE,  # config에서 설정한 값 (기본 1)
         shuffle=True,
         num_workers=config.NUM_WORKERS,
         pin_memory=True,
@@ -92,13 +93,26 @@ def train(config):
     # EMA
     model_ema = ModelEMA(model, decay=config.EMA_DECAY)
 
-    # 4. Resume Logic
-    start_epoch = load_checkpoint(
-        config, model, model_ema, optimizer, scheduler, logger
-    )
+    # 4. Resume Logic (Option Based)
+    if args.restart:
+        logger.info(
+            "[Option] --restart detected. Ignoring checkpoints, starting from scratch."
+        )
+        start_epoch = 0
+    else:
+        # --resume이거나 옵션이 없을 때는 기본적으로 Load 시도
+        # (체크포인트가 없으면 내부적으로 0을 리턴하므로 안전)
+        if args.resume:
+            logger.info("[Option] --resume detected. Attempting to load checkpoint.")
+        else:
+            logger.info("No option specified. Defaulting to resume logic.")
+
+        start_epoch = load_checkpoint(
+            config, model, model_ema, optimizer, scheduler, logger
+        )
 
     # 5. Training Loop
-    logger.info("Start Training Loop")
+    logger.info(f"Start Training Loop from Epoch {start_epoch}")
 
     for epoch in range(start_epoch, config.TOTAL_EPOCHS + 1):
         model.train()
@@ -150,6 +164,8 @@ def train(config):
         logger.info(f"==> Epoch {epoch} Finished. Avg Loss: {avg_loss:.6f}")
 
         # 6. Validation Loop (Every 10 Epochs)
+        # 0 Epoch(시작 직후 상태)도 확인하고 싶다면 epoch >= 0 조건 추가 가능하지만
+        # 보통은 학습 후 확인하므로 interval 체크만 유지
         if epoch % config.VALID_INTERVAL_EPOCHS == 0:
             logger.info(f"==> Validating at Epoch {epoch}...")
 
@@ -195,7 +211,6 @@ def train(config):
                     # 5. Save Visualization (First batch only)
                     if not saved_vis:
                         # (Input | Pred | Target) 가로로 병합
-                        # v_in_rgb가 6-bit 양자화+서브샘플링된 상태라 비교하기 좋음
                         combined = torch.cat([v_in_rgb, v_pred_rgb, v_gt_rgb], dim=3)
                         save_image(combined, vis_save_path)
                         saved_vis = True
@@ -207,8 +222,6 @@ def train(config):
             model_ema.restore(model)
 
             # Save Checkpoint
-            # PSNR이 이전에 비해 높은지 판단 로직은 생략(단순 저장)하거나
-            # 필요 시 추가 가능. 여기서는 주기적 저장만 수행.
             save_checkpoint(
                 config,
                 epoch,
@@ -216,9 +229,26 @@ def train(config):
                 model_ema,
                 optimizer,
                 scheduler,
-                is_best=False,  # Best 갱신 로직은 복잡해지므로 생략 (필요시 추가)
+                is_best=False,
             )
 
 
 if __name__ == "__main__":
-    train(Config)
+    parser = argparse.ArgumentParser(description="Bake Training Script")
+
+    # 상호 배타적 그룹 생성 (동시에 사용 불가)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume training from the last checkpoint (default behavior).",
+    )
+    group.add_argument(
+        "--restart",
+        action="store_true",
+        help="Force restart training from scratch (Epoch 0), ignoring checkpoints.",
+    )
+
+    args = parser.parse_args()
+
+    train(Config, args)
