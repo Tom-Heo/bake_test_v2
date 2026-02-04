@@ -15,7 +15,7 @@ class DIV2KDataset(Dataset):
         self.config = config
         self.is_train = is_train
 
-        # [수정됨] is_train 플래그에 따라 Train/Valid 경로 분기
+        # is_train 플래그에 따라 Train/Valid 경로 분기
         if is_train:
             self.root_dir = config.DIV2K_TRAIN_ROOT
         else:
@@ -28,7 +28,6 @@ class DIV2KDataset(Dataset):
         self.image_files.sort()
 
         # 색공간 변환기 (sRGB <-> Oklab)
-        # Parameter가 없으므로 CPU에서 초기화
         self.srgb_to_oklab = Palette.sRGBtoOklab()
 
     def __len__(self):
@@ -80,8 +79,15 @@ class DIV2KDataset(Dataset):
         img = Image.open(img_path).convert("RGB")
         target_srgb = transforms.ToTensor()(img)
 
-        # 2. Even Size Padding
-        target_srgb = self._make_even_size(target_srgb)
+        # 2. Resize / Crop Strategy
+        if self.is_train:
+            # [수정됨] 학습 시 OOM 방지를 위해 1024x1024 Random Crop 수행
+            # DIV2K 이미지는 대부분 1024보다 크므로 안전하게 Crop 가능
+            cropper = transforms.RandomCrop(1024)
+            target_srgb = cropper(target_srgb)
+        else:
+            # 검증 시에는 원본 해상도 유지 (단, 짝수로 맞춤)
+            target_srgb = self._make_even_size(target_srgb)
 
         # 3. Create Input (Degradation Process)
         # Step A: 6-bit Quantization
