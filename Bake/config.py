@@ -25,7 +25,7 @@ class Config:
     NUM_WORKERS = 4  # 데이터 로더 워커 수
 
     # 데이터 손상(Degradation) 파라미터
-    BIT_DEPTH_INPUT = 6  # 6-bit Quantization
+    BIT_DEPTH_INPUT = 4  # 4-bit Quantization
     CHROMA_SUBSAMPLE = True  # 4:2:0 Subsampling (Oklab a, b channel)
 
     # -------------------------------------------------------------------------
