@@ -179,12 +179,12 @@ class Bake:
             color_embedding = self.color_embedding_encoder(baked_x_lr)
             residual = x
 
-            h = self.nemo1(x)
-            h = self.color_embedding_gate(h, color_embedding)
-            h = self.nemo2(h)
-            h = self.residual_gate(h, residual)
+            x = self.nemo1(x)
+            x = self.color_embedding_gate(x, color_embedding)
+            x = self.nemo2(x)
+            x = self.residual_gate(x, residual)
 
-            return h
+            return x
 
     class BakeNet(nn.Module):
         def __init__(self, dim=96):
