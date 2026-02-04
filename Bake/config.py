@@ -47,8 +47,8 @@ class Config:
     SCHEDULER_GAMMA = 0.999996  # per step decay
 
     # 주기 설정
-    LOG_INTERVAL_STEPS = 100  # 100 스텝마다 로그 출력
-    VALID_INTERVAL_EPOCHS = 10  # 10 에폭마다 검증 및 체크포인트 저장
+    LOG_INTERVAL_STEPS = 50  # 50 스텝마다 로그 출력
+    VALID_INTERVAL_EPOCHS = 5  # 5 에폭마다 검증 및 체크포인트 저장
 
     # -------------------------------------------------------------------------
     # [Hardware Settings]
