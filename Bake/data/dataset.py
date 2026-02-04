@@ -84,7 +84,7 @@ class DIV2KDataset(Dataset):
             # [수정됨] 1024x1024 Crop + 안전장치(pad_if_needed)
             # 이미지가 1024보다 작으면 Reflect Padding으로 채운 뒤 잘라냄 -> 에러 방지
             cropper = transforms.RandomCrop(
-                768, pad_if_needed=True, padding_mode="reflect"
+                512, pad_if_needed=True, padding_mode="reflect"
             )
             target_srgb = cropper(target_srgb)
         else:
