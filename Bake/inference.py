@@ -122,17 +122,22 @@ def inference(args):
             output_rgb = oklab_to_srgb(output_oklab)
 
         # H. Unpad & Clamp
-        # [수정됨] 4차원 상태에서 Unpad 먼저 수행하고 Squeeze
         output_rgb = unpad_image(output_rgb, org_size)  # (1, 3, H, W)
         output_rgb = output_rgb.squeeze(0)  # (3, H, W)
         output_rgb = output_rgb.clamp(0, 1)
 
-        # I. Save Result [Input | Output]
-        combined = torch.cat([input_srgb, output_rgb], dim=2)  # 가로 병합
+        # I. Save Results (Two Versions)
 
-        save_path = os.path.join(save_dir, f"res_{img_name}")
-        save_image(combined, save_path)
-        print(f"Saved: {save_path}")
+        # 1) Comparison [Input | Output]
+        combined = torch.cat([input_srgb, output_rgb], dim=2)
+        save_path_comp = os.path.join(save_dir, f"comp_{img_name}")
+        save_image(combined, save_path_comp)
+
+        # 2) Result Only [Output]
+        save_path_res = os.path.join(save_dir, f"res_{img_name}")
+        save_image(output_rgb, save_path_res)
+
+        print(f"Saved: {save_path_comp} & {save_path_res}")
 
     print("Inference Finished.")
 
