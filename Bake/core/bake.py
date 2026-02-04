@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import math
 from math import sqrt
 from .heo import Heo as hh
-from palette import Palette as pp
+from .palette import Palette as pp
 
 
 class Bake:
