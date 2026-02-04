@@ -81,9 +81,11 @@ class DIV2KDataset(Dataset):
 
         # 2. Resize / Crop Strategy
         if self.is_train:
-            # [수정됨] 학습 시 OOM 방지를 위해 1024x1024 Random Crop 수행
-            # DIV2K 이미지는 대부분 1024보다 크므로 안전하게 Crop 가능
-            cropper = transforms.RandomCrop(1024)
+            # [수정됨] 1024x1024 Crop + 안전장치(pad_if_needed)
+            # 이미지가 1024보다 작으면 Reflect Padding으로 채운 뒤 잘라냄 -> 에러 방지
+            cropper = transforms.RandomCrop(
+                1024, pad_if_needed=True, padding_mode="reflect"
+            )
             target_srgb = cropper(target_srgb)
         else:
             # 검증 시에는 원본 해상도 유지 (단, 짝수로 맞춤)
