@@ -1,0 +1,18 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Dataset (자동 다운로드됨)
+dataset/
+
+# Checkpoints (가중치 파일)
+checkpoints/
+
+# Logs & Results
+logs/
+results/
+
+# OS & IDE files
+.DS_Store
+.vscode/
+.idea/
