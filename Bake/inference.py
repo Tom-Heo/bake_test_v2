@@ -35,9 +35,10 @@ def pad_image(tensor):
 
 def unpad_image(tensor, original_size):
     """
-    패딩된 텐서를 원래 크기로 복구
+    패딩된 텐서를 원래 크기로 복구 (Input: B, C, H, W)
     """
     h, w = original_size
+    # 4차원 텐서 슬라이싱
     return tensor[:, :, :h, :w]
 
 
@@ -68,7 +69,6 @@ def inference(args):
     # Load EMA Weights if available (Preferred)
     if "ema_shadow" in checkpoint:
         print("Loading EMA weights (ema_shadow)...")
-        # 모델의 state_dict 키와 ema_shadow 키가 일치한다고 가정
         model.load_state_dict(checkpoint["ema_shadow"])
     else:
         print("Warning: EMA weights not found. Loading standard model weights.")
@@ -77,9 +77,7 @@ def inference(args):
     model.eval()
 
     # 4. Input Processing
-    # 입력이 폴더인지 파일인지 확인
     if os.path.isdir(args.input):
-        # 폴더 내의 이미지 파일들 수집
         exts = (".png", ".jpg", ".jpeg", ".bmp")
         image_paths = [
             os.path.join(args.input, f)
@@ -88,7 +86,6 @@ def inference(args):
         ]
         save_dir = os.path.join(Config.RESULT_DIR, "inference_folder")
     else:
-        # 단일 파일
         image_paths = [args.input]
         save_dir = os.path.join(Config.RESULT_DIR, "inference_single")
 
@@ -125,12 +122,12 @@ def inference(args):
             output_rgb = oklab_to_srgb(output_oklab)
 
         # H. Unpad & Clamp
+        # [수정됨] 4차원 상태에서 Unpad 먼저 수행하고 Squeeze
+        output_rgb = unpad_image(output_rgb, org_size)  # (1, 3, H, W)
         output_rgb = output_rgb.squeeze(0)  # (3, H, W)
-        output_rgb = unpad_image(output_rgb, org_size)
         output_rgb = output_rgb.clamp(0, 1)
 
         # I. Save Result [Input | Output]
-        # input_srgb는 원본 크기이므로 바로 병합 가능
         combined = torch.cat([input_srgb, output_rgb], dim=2)  # 가로 병합
 
         save_path = os.path.join(save_dir, f"res_{img_name}")
