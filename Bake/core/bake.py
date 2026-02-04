@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 from math import sqrt
-from heo import Heo as hh
+from .heo import Heo as hh
 from palette import Palette as pp
 
 
